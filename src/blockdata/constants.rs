@@ -57,7 +57,7 @@ pub fn max_target(_: Network) -> Uint256 {
 /// since keeping everything below this value should prevent overflows
 /// if you are doing anything remotely sane with monetary values).
 pub fn max_money(_: Network) -> u64 {
-    21_000_000 * COIN_VALUE
+    105_120_000 * COIN_VALUE
 }
 
 /// Constructs and returns the coinbase (and only) transaction of the Bitcoin genesis block
@@ -73,7 +73,7 @@ fn bitcoin_genesis_tx() -> Transaction {
     // Inputs
     let in_script = script::Builder::new().push_scriptint(486604799)
                                           .push_scriptint(4)
-                                          .push_slice(b"The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
+                                          .push_slice(b"Dec. 31th 2013 Japan, The winning numbers of the 2013 Year-End Jumbo Lottery:23-130916")
                                           .into_script();
     ret.input.push(TxIn {
         previous_output: OutPoint::null(),
@@ -84,7 +84,7 @@ fn bitcoin_genesis_tx() -> Transaction {
 
     // Outputs
     let out_script = script::Builder::new()
-        .push_slice(&Vec::from_hex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f").unwrap())
+        .push_slice(&Vec::from_hex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9").unwrap())
         .push_opcode(opcodes::all::OP_CHECKSIG)
         .into_script();
     ret.output.push(TxOut {
@@ -108,9 +108,9 @@ pub fn genesis_block(network: Network) -> Block {
                     version: 1,
                     prev_blockhash: Default::default(),
                     merkle_root,
-                    time: 1231006505,
-                    bits: 0x1d00ffff,
-                    nonce: 2083236893
+                    time: 1388479472,
+                    bits: 0x1e0ffff0,
+                    nonce: 1234534
                 },
                 txdata: txdata
             }
@@ -121,9 +121,9 @@ pub fn genesis_block(network: Network) -> Block {
                     version: 1,
                     prev_blockhash: Default::default(),
                     merkle_root,
-                    time: 1296688602,
-                    bits: 0x1d00ffff,
-                    nonce: 414098458
+                    time: 1488924140,
+                    bits: 0x1e0ffff0,
+                    nonce: 2122860
                 },
                 txdata: txdata
             }
@@ -136,7 +136,7 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1296688602,
                     bits: 0x207fffff,
-                    nonce: 2
+                    nonce: 1
                 },
                 txdata: txdata
             }
@@ -163,17 +163,17 @@ mod test {
         assert_eq!(gen.input[0].previous_output.txid, Default::default());
         assert_eq!(gen.input[0].previous_output.vout, 0xFFFFFFFF);
         assert_eq!(serialize(&gen.input[0].script_sig),
-                   Vec::from_hex("4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73").unwrap());
+                   Vec::from_hex("5f04ffff001d01044c564465632e20333174682032303133204a6170616e2c205468652077696e6e696e67206e756d62657273206f6620746865203230313320596561722d456e64204a756d626f204c6f74746572793a32332d313330393136").unwrap());
 
         assert_eq!(gen.input[0].sequence, MAX_SEQUENCE);
         assert_eq!(gen.output.len(), 1);
         assert_eq!(serialize(&gen.output[0].script_pubkey),
-                   Vec::from_hex("434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac").unwrap());
+                   Vec::from_hex("4341040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9ac").unwrap());
         assert_eq!(gen.output[0].value, 50 * COIN_VALUE);
         assert_eq!(gen.lock_time, 0);
 
         assert_eq!(format!("{:x}", gen.wtxid()),
-                   "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b".to_string());
+                   "35e405a8a46f4dbc1941727aaf338939323c3b955232d0317f8731fe07ac4ba6".to_string());
     }
 
     #[test]
@@ -183,12 +183,12 @@ mod test {
         assert_eq!(gen.header.version, 1);
         assert_eq!(gen.header.prev_blockhash, Default::default());
         assert_eq!(format!("{:x}", gen.header.merkle_root),
-                   "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b".to_string());
-        assert_eq!(gen.header.time, 1231006505);
-        assert_eq!(gen.header.bits, 0x1d00ffff);
-        assert_eq!(gen.header.nonce, 2083236893);
+                   "35e405a8a46f4dbc1941727aaf338939323c3b955232d0317f8731fe07ac4ba6".to_string());
+        assert_eq!(gen.header.time, 1388479472);
+        assert_eq!(gen.header.bits, 0x1e0ffff0);
+        assert_eq!(gen.header.nonce, 1234534);
         assert_eq!(format!("{:x}", gen.header.block_hash()),
-                   "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f".to_string());
+                   "ff9f1c0116d19de7c9963845e129f9ed1bfc0b376eb54fd7afa42e0d418c8bb6".to_string());
     }
 
     #[test]
@@ -197,12 +197,12 @@ mod test {
         assert_eq!(gen.header.version, 1);
         assert_eq!(gen.header.prev_blockhash, Default::default());
         assert_eq!(format!("{:x}", gen.header.merkle_root),
-                  "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b".to_string());
-        assert_eq!(gen.header.time, 1296688602);
-        assert_eq!(gen.header.bits, 0x1d00ffff);
-        assert_eq!(gen.header.nonce, 414098458);
+                  "35e405a8a46f4dbc1941727aaf338939323c3b955232d0317f8731fe07ac4ba6".to_string());
+        assert_eq!(gen.header.time, 1488924140);
+        assert_eq!(gen.header.bits, 0x1e0ffff0);
+        assert_eq!(gen.header.nonce, 2122860);
         assert_eq!(format!("{:x}", gen.header.block_hash()),
-                   "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943".to_string());
+                   "a2b106ceba3be0c6d097b2a6a6aacf9d638ba8258ae478158f449c321061e0b2".to_string());
     }
 }
 

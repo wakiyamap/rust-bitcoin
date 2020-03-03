@@ -34,7 +34,7 @@
 //! let network = Network::Bitcoin;
 //! let bytes = serialize(&network.magic());
 //!
-//! assert_eq!(&bytes[..], &[0xF9, 0xBE, 0xB4, 0xD9]);
+//! assert_eq!(&bytes[..], &[0xFB, 0xC0, 0xB6, 0xDB]);
 //! ```
 
 use std::{fmt, io, ops};
@@ -87,13 +87,13 @@ impl Network {
     /// use bitcoin::network::constants::Network;
     ///
     /// let network = Network::Bitcoin;
-    /// assert_eq!(network.magic(), 0xD9B4BEF9);
+    /// assert_eq!(network.magic(), 0xDBB6C0FB);
     /// ```
     pub fn magic(&self) -> u32 {
         // Note: any new entries here must be added to `from_magic` above
         match *self {
-            Network::Bitcoin => 0xD9B4BEF9,
-            Network::Testnet => 0x0709110B,
+            Network::Bitcoin => 0xDBB6C0FB,
+            Network::Testnet => 0xF1C8D2FD,
             Network::Regtest => 0xDAB5BFFA,
         }
     }
@@ -280,11 +280,11 @@ mod tests {
     fn serialize_test() {
         assert_eq!(
             serialize(&Network::Bitcoin.magic()),
-            &[0xf9, 0xbe, 0xb4, 0xd9]
+            &[0xfb, 0xc0, 0xb6, 0xdb]
         );
         assert_eq!(
             serialize(&Network::Testnet.magic()),
-            &[0x0b, 0x11, 0x09, 0x07]
+            &[0xfd, 0xd2, 0xc8, 0xf1]
         );
         assert_eq!(
             serialize(&Network::Regtest.magic()),
@@ -292,11 +292,11 @@ mod tests {
         );
 
         assert_eq!(
-            deserialize(&[0xf9, 0xbe, 0xb4, 0xd9]).ok(),
+            deserialize(&[0xfb, 0xc0, 0xb6, 0xdb]).ok(),
             Some(Network::Bitcoin.magic())
         );
         assert_eq!(
-            deserialize(&[0x0b, 0x11, 0x09, 0x07]).ok(),
+            deserialize(&[0xfd, 0xd2, 0xc8, 0xf1]).ok(),
             Some(Network::Testnet.magic())
         );
         assert_eq!(

@@ -25,14 +25,14 @@ const MAX_BITS_BITCOIN: Uint256 = Uint256([
     0xffffffffffffffffu64,
     0xffffffffffffffffu64,
     0xffffffffffffffffu64,
-    0x00000000ffffffffu64,
+    0x00000fffffffffffu64,
 ]);
 /// Lowest possible difficulty for Testnet.
 const MAX_BITS_TESTNET: Uint256 = Uint256([
     0xffffffffffffffffu64,
     0xffffffffffffffffu64,
     0xffffffffffffffffu64,
-    0x00000000ffffffffu64,
+    0x00000fffffffffffu64,
 ]);
 /// Lowest possible difficulty for Regtest.
 const MAX_BITS_REGTEST: Uint256 = Uint256([
@@ -79,43 +79,43 @@ impl Params {
         match network {
             Network::Bitcoin => Params {
                 network: Network::Bitcoin,
-                bip16_time: 1333238400,                 // Apr 1 2012
-                bip34_height: 227931, // 000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8
-                bip65_height: 388381, // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
-                bip66_height: 363725, // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
-                rule_change_activation_threshold: 1916, // 95%
-                miner_confirmation_window: 2016,
+                bip16_time: 0, // gensis block
+                bip34_height: 0,
+                bip65_height: 977759, // ecc773c827a8cde039f6dfcdee2de981b747f58aa1bc4dddcb28e3c857dbc860
+                bip66_height: 977759, // ecc773c827a8cde039f6dfcdee2de981b747f58aa1bc4dddcb28e3c857dbc860
+                rule_change_activation_threshold: 7560, // 75% of 10080
+                miner_confirmation_window: 10080, // 3.5 days / nPowTargetSpacing * 4 * 0.75
                 pow_limit: MAX_BITS_BITCOIN,
-                pow_target_spacing: 10 * 60,            // 10 minutes.
-                pow_target_timespan: 14 * 24 * 60 * 60, // 2 weeks.
+                pow_target_spacing: 90, // 1.5 minutes(1.5 * 60)
+                pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: false,
                 no_pow_retargeting: false,
             },
             Network::Testnet => Params {
                 network: Network::Testnet,
-                bip16_time: 1333238400,                 // Apr 1 2012
-                bip34_height: 21111, // 0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8
-                bip65_height: 581885, // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
-                bip66_height: 330776, // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
-                rule_change_activation_threshold: 1512, // 75%
-                miner_confirmation_window: 2016,
+                bip16_time: 0, // always enforce P2SH BIP16 on regtest
+                bip34_height: 0,
+                bip65_height: 100000000, // TODO
+                bip66_height: 100000000, // TODO
+                rule_change_activation_threshold: 75, // 75%
+                miner_confirmation_window: 100,
                 pow_limit: MAX_BITS_TESTNET,
-                pow_target_spacing: 10 * 60,            // 10 minutes.
-                pow_target_timespan: 14 * 24 * 60 * 60, // 2 weeks.
+                pow_target_spacing: 90, // 1.5 minutes(1.5 * 60)
+                pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: true,
                 no_pow_retargeting: false,
             },
             Network::Regtest => Params {
                 network: Network::Regtest,
-                bip16_time: 1333238400,  // Apr 1 2012
+                bip16_time: 0,                 // gensis block
                 bip34_height: 100000000, // not activated on regtest
-                bip65_height: 1351,
-                bip66_height: 1251,                    // used only in rpc tests
+                bip65_height: 100000000,
+                bip66_height: 100000000, // used only in rpc tests
                 rule_change_activation_threshold: 108, // 75%
                 miner_confirmation_window: 144,
                 pow_limit: MAX_BITS_REGTEST,
-                pow_target_spacing: 10 * 60,            // 10 minutes.
-                pow_target_timespan: 14 * 24 * 60 * 60, // 2 weeks.
+                pow_target_spacing: 90, // 1.5 minutes(1.5 * 60)
+                pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: true,
                 no_pow_retargeting: true,
             },
