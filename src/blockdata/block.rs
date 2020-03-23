@@ -31,6 +31,7 @@ use consensus::params::Params;
 use network::constants::Network;
 use blockdata::transaction::Transaction;
 use blockdata::constants::max_target;
+use VarInt;
 extern crate lyra2;
 extern crate scrypt;
 
@@ -126,6 +127,21 @@ impl Block {
             }
         );
         bitcoin_merkle_root(hashes).into()
+    }
+
+    /// Get the weight of the block
+    pub fn get_weight(&self) -> usize {
+        // XXX use WITNESS_SCALE_FACTOR when rebasing to master
+        let base_weight = 4 * (80 + VarInt(self.txdata.len() as u64).len());
+        let txs_weight: usize = self.txdata.iter().map(|tx| tx.get_weight()).sum();
+        base_weight + txs_weight
+    }
+
+    /// Get the size of the block
+    pub fn get_size(&self) -> usize {
+        let base_size = 80 + VarInt(self.txdata.len() as u64).len();
+        let txs_size: usize = self.txdata.iter().map(|tx| tx.get_size()).sum();
+        base_size + txs_size
     }
 }
 
