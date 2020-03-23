@@ -139,8 +139,12 @@ impl BlockHeader {
     /// Return the block hash(scrypt & Lyra2rev2).
     pub fn block_pow_hash(&self, bool_lyra2rev2: bool) -> BlockHash {
         let mut raw_header_hash = serialize(&self.version);
-        raw_header_hash.append(&mut serialize(&self.prev_blockhash));
-        raw_header_hash.append(&mut serialize(&self.merkle_root));
+        let mut vec_prev_blockhash = serialize(&self.prev_blockhash);
+        vec_prev_blockhash.reverse();
+        raw_header_hash.append(&mut vec_prev_blockhash);
+        let mut vec_merkle_root = serialize(&self.merkle_root);
+        vec_merkle_root.reverse();
+        raw_header_hash.append(&mut vec_merkle_root);
         raw_header_hash.append(&mut serialize(&self.time));
         raw_header_hash.append(&mut serialize(&self.bits));
         raw_header_hash.append(&mut serialize(&self.nonce));
