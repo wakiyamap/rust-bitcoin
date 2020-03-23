@@ -26,10 +26,12 @@ use util::hash::bitcoin_merkle_root;
 use hashes::{Hash, HashEngine};
 use hash_types::{Wtxid, BlockHash, TxMerkleNode, WitnessMerkleNode, WitnessCommitment};
 use util::uint::Uint256;
-use consensus::encode::Encodable;
+use consensus::encode::{Encodable, serialize};
 use network::constants::Network;
 use blockdata::transaction::Transaction;
 use blockdata::constants::max_target;
+extern crate lyra2;
+extern crate scrypt;
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
@@ -132,6 +134,24 @@ impl BlockHeader {
         let mut engine = BlockHash::engine();
         self.consensus_encode(&mut engine).expect("engines don't error");
         BlockHash::from_engine(engine)
+    }
+
+    /// Return the block hash(scrypt & Lyra2rev2).
+    pub fn block_pow_hash(&self, bool_lyra2rev2: bool) -> BlockHash {
+        let mut raw_header_hash = serialize(&self.version);
+        raw_header_hash.append(&mut serialize(&self.prev_blockhash));
+        raw_header_hash.append(&mut serialize(&self.merkle_root));
+        raw_header_hash.append(&mut serialize(&self.time));
+        raw_header_hash.append(&mut serialize(&self.bits));
+        raw_header_hash.append(&mut serialize(&self.nonce));
+        if bool_lyra2rev2 {
+            BlockHash::from_slice(&lyra2::lyra2rev2::sum(raw_header_hash)[..]).expect("maybe ok")
+        } else {
+            let params = scrypt::ScryptParams::new(1, 1, 1024).unwrap();
+            let mut output = vec![0; 32];
+            scrypt::scrypt(&raw_header_hash, &raw_header_hash, &params, &mut output).expect("OS RNG should not fail");
+            BlockHash::from_slice(&output[..]).expect("maybe ok")
+        }
     }
 
     /// Computes the target [0, T] that a blockhash must land in to be valid
