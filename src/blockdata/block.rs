@@ -27,6 +27,7 @@ use hashes::{Hash, HashEngine};
 use hash_types::{Wtxid, BlockHash, TxMerkleNode, WitnessMerkleNode, WitnessCommitment};
 use util::uint::Uint256;
 use consensus::encode::{Encodable, serialize};
+use consensus::params::Params;
 use network::constants::Network;
 use blockdata::transaction::Transaction;
 use blockdata::constants::max_target;
@@ -205,12 +206,13 @@ impl BlockHeader {
     }
 
     /// Checks that the proof-of-work for the block is valid.
-    pub fn validate_pow(&self, required_target: &Uint256) -> Result<(), util::Error> {
-        let target = &self.target();
+    pub fn validate_pow(&self, required_target: &Uint256, height: &u32, consensus_params: &Params) -> Result<(), util::Error> {
+        // let target = &self.target(); //TODO monacoin is OK?
+        let target = required_target;
         if target != required_target {
             return Err(BlockBadTarget);
         }
-        let data: [u8; 32] = self.block_hash().into_inner();
+        let data: [u8; 32] = self.block_pow_hash(height >= &consensus_params.switch_lyra2rev2_dgwblock).into_inner();
         let mut ret = [0u64; 4];
         util::endian::bytes_to_u64_slice_le(&data, &mut ret);
         let hash = &Uint256(ret);

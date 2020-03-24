@@ -71,6 +71,8 @@ pub struct Params {
     pub allow_min_difficulty_blocks: bool,
     /// Determines whether retargeting is disabled for this network or not.
     pub no_pow_retargeting: bool,
+    /// Block height at which Lyra2REv2 and DGWv3 becomes active.
+    pub switch_lyra2rev2_dgwblock: u32,
 }
 
 impl Params {
@@ -90,6 +92,7 @@ impl Params {
                 pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: false,
                 no_pow_retargeting: false,
+                switch_lyra2rev2_dgwblock: 450000,
             },
             Network::Testnet => Params {
                 network: Network::Testnet,
@@ -104,6 +107,7 @@ impl Params {
                 pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: true,
                 no_pow_retargeting: false,
+                switch_lyra2rev2_dgwblock: 60,
             },
             Network::Regtest => Params {
                 network: Network::Regtest,
@@ -118,6 +122,7 @@ impl Params {
                 pow_target_timespan: 95040, // 1.1 days(1.1 * 24 * 60 * 60)
                 allow_min_difficulty_blocks: true,
                 no_pow_retargeting: true,
+                switch_lyra2rev2_dgwblock: 30,
             },
         }
     }
