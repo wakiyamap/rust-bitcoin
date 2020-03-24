@@ -1,7 +1,7 @@
-[![Status](https://travis-ci.org/rust-bitcoin/rust-bitcoin.png?branch=master)](https://travis-ci.org/rust-bitcoin/rust-bitcoin)
+[![Status](https://travis-ci.org/wakiyamap/rust-monacoin.png?branch=master)](https://travis-ci.org/wakiyamap/rust-monacoin)
 [![Safety Dance](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 
-# Rust Bitcoin Library
+# Rust Monacoin Library
 
 Library with support for de/serialization, parsing and executing on data
 structures and network messages related to Bitcoin.
@@ -42,14 +42,6 @@ Currently can be found on [docs.rs/bitcoin](https://docs.rs/bitcoin/).
 Patches to add usage examples and to expand on existing docs would be extremely
 appreciated.
 
-# Contributing
-Contributions are generally welcome. If you intend to make larger changes please
-discuss them in an issue before PRing them to avoid duplicate work and
-architectural mismatches. If you have any questions or ideas you want to discuss
-please join us in
-[#rust-bitcoin](http://webchat.freenode.net/?channels=%23rust-bitcoin) on
-freenode.
-
 ## Minimum Supported Rust Version (MSRV)
 This library should always compile with any combination of features on **Rust 1.22**.
 
@@ -65,8 +57,8 @@ versions (>=1.22) than the current stable one.
 The library can be built and tested using [`cargo`](https://github.com/rust-lang/cargo/):
 
 ```
-git clone git@github.com:rust-bitcoin/rust-bitcoin.git
-cd rust-bitcoin
+git clone git@github.com:wakiyamap/rust-monacoin.git
+cd rust-monacoin
 cargo build
 ```
 
@@ -87,16 +79,8 @@ mark it by prefixing the title with `WIP: `.
 
 ## Policy on Altcoins/Altchains
 
-Patches which add support for non-Bitcoin cryptocurrencies by adding constants
-to existing enums (e.g. to set the network message magic-byte sequence) are
-welcome. Anything more involved will be considered on a case-by-case basis,
-as the altcoin landscape includes projects which [frequently appear and
-disappear, and are poorly designed anyway](https://download.wpsoftware.net/bitcoin/alts.pdf)
-and keeping the codebase maintainable is a large priority.
-
-In general, things that improve cross-chain compatibility (e.g. support for
-cross-chain atomic swaps) are more likely to be accepted than things which
-support only a single blockchain.
+This is altcoin(monacoin) library.
+Bitcoin(not altcoin) is [here](https://github.com/rust-bitcoin/rust-bitcoin).
 
 
 # Release Notes
