@@ -667,16 +667,16 @@ mod tests {
         }
 
         let invalid_vectors = [
-            "tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty",
-            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5",
-            "BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2",
-            "bc1rw5uspcuh",
-            "bc10w508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kw5rljs90",
-            "BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P",
-            "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sL5k7",
-            "bc1zw508d6qejxtdg4y5r3zarvaryvqyzf3du",
-            "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv",
-            "bc1gmk9yu",
+            "tnamo1qw508d6qejxtdg4y5r3zarvary0c5xw7kumwy3n",
+            "mona1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5c2see9",
+            "MONA13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KHXEVYT",
+            "mona1rw5gv2qqg",
+            "mona10w508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kw56ms2yd",
+            "MONA1QR508D6QEJXTDG4Y5R3ZARVARYV6X0N6D",
+            "tmona1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qwLyd0j",
+            "mona1zw508d6qejxtdg4y5r3zarvaryvq0fn2th",
+            "tmona1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pnfscjq",
+            "mona1c0fp8z",
         ];
         for vector in &invalid_vectors {
             assert!(vector.parse::<Address>().is_err());
@@ -715,13 +715,13 @@ mod tests {
         );
 
         let addr =
-            Address::from_str("tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7")
+            Address::from_str("tmona1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qwlyd0j")
                 .unwrap();
         let json = serde_json::to_value(&addr).unwrap();
         assert_eq!(
             json,
             serde_json::Value::String(
-                "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7".to_owned()
+                "tmona1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qwlyd0j".to_owned()
             )
         );
         let into: Address = serde_json::from_value(json).unwrap();
@@ -731,11 +731,11 @@ mod tests {
             hex_script!("00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262")
         );
 
-        let addr = Address::from_str("bcrt1q2nfxmhd4n3c8834pj72xagvyr9gl57n5r94fsl").unwrap();
+        let addr = Address::from_str("rmona1q2nfxmhd4n3c8834pj72xagvyr9gl57n5fllfhk").unwrap();
         let json = serde_json::to_value(&addr).unwrap();
         assert_eq!(
             json,
-            serde_json::Value::String("bcrt1q2nfxmhd4n3c8834pj72xagvyr9gl57n5r94fsl".to_owned())
+            serde_json::Value::String("rmona1q2nfxmhd4n3c8834pj72xagvyr9gl57n5fllfhk".to_owned())
         );
         let into: Address = serde_json::from_value(json).unwrap();
         assert_eq!(addr.to_string(), into.to_string());
