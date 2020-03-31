@@ -1,10 +1,13 @@
 [![Status](https://travis-ci.org/wakiyamap/rust-monacoin.png?branch=master)](https://travis-ci.org/wakiyamap/rust-monacoin)
 [![Safety Dance](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 
+## Attention
+This is the fork of [rust-bitcoin](https://github.com/rust-bitcoin/rust-bitcoin).
+
 # Rust Monacoin Library
 
 Library with support for de/serialization, parsing and executing on data
-structures and network messages related to Bitcoin.
+structures and network messages related to Monacoin.
 
 [Documentation](https://docs.rs/bitcoin/)
 
@@ -43,7 +46,7 @@ Patches to add usage examples and to expand on existing docs would be extremely
 appreciated.
 
 ## Minimum Supported Rust Version (MSRV)
-This library should always compile with any combination of features on **Rust 1.22**.
+This library should always compile with any combination of features on **Rust 1.32**.
 
 ## Installing Rust
 Rust can be installed using your package manager of choice or
