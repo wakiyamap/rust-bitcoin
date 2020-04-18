@@ -11,9 +11,9 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! Bitcoin Keys
+//! Monacoin Keys
 //!
-//! Keys used in Bitcoin that can be roundtrip (de)serialized.
+//! Keys used in Monacoin that can be roundtrip (de)serialized.
 //!
 
 use std::fmt::{self, Write};
@@ -52,7 +52,7 @@ impl error::Error for Error {
     }
 
     fn description(&self) -> &str {
-		"Bitcoin key error"
+		"Monacoin key error"
     }
 }
 
@@ -70,7 +70,7 @@ impl From<secp256k1::Error> for Error {
     }
 }
 
-/// A Bitcoin ECDSA public key
+/// A Monacoin ECDSA public key
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PublicKey {
     /// Whether this public key should be serialized as compressed
@@ -144,7 +144,7 @@ impl FromStr for PublicKey {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-/// A Bitcoin ECDSA private key
+/// A Monacoin ECDSA private key
 pub struct PrivateKey {
     /// Whether this private key should be serialized as compressed
     pub compressed: bool,
@@ -172,8 +172,8 @@ impl PrivateKey {
     pub fn fmt_wif(&self, fmt: &mut fmt::Write) -> fmt::Result {
         let mut ret = [0; 34];
         ret[0] = match self.network {
-            Network::Bitcoin => 176,
-            Network::Testnet | Network::Regtest => 239,
+            Network::Monacoin => 176,
+            Network::MonacoinTestnet | Network::MonacoinRegtest => 239,
         };
         ret[1..33].copy_from_slice(&self.key[..]);
         let privkey = if self.compressed {
@@ -204,8 +204,8 @@ impl PrivateKey {
         };
 
         let network = match data[0] {
-            128 => Network::Bitcoin,
-            239 => Network::Testnet,
+            128 => Network::Monacoin,
+            239 => Network::MonacoinTestnet,
             x   => { return Err(Error::Base58(base58::Error::InvalidVersion(vec![x]))); }
         };
 
@@ -360,15 +360,15 @@ mod tests {
     use super::{PrivateKey, PublicKey};
     use secp256k1::Secp256k1;
     use std::str::FromStr;
-    use network::constants::Network::Testnet;
-    use network::constants::Network::Bitcoin;
+    use network::constants::Network::MonacoinTestnet;
+    use network::constants::Network::Monacoin;
     use util::address::Address;
 
     #[test]
     fn test_key_derivation() {
         // testnet compressed
         let sk = PrivateKey::from_wif("cVt4o7BGAig1UXywgGSmARhxMdzP5qvQsxKkSsc1XEkw3tDTQFpy").unwrap();
-        assert_eq!(sk.network, Testnet);
+        assert_eq!(sk.network, MonacoinTestnet);
         assert_eq!(sk.compressed, true);
         assert_eq!(&sk.to_wif(), "cVt4o7BGAig1UXywgGSmARhxMdzP5qvQsxKkSsc1XEkw3tDTQFpy");
 
@@ -384,7 +384,7 @@ mod tests {
 
         // mainnet uncompressed
         let sk = PrivateKey::from_wif("5JYkZjmN7PVMjJUfJWfRFwtuXTGB439XV6faajeHPAM9Z2PT2R3").unwrap();
-        assert_eq!(sk.network, Bitcoin);
+        assert_eq!(sk.network, Monacoin);
         assert_eq!(sk.compressed, false);
         assert_eq!(&sk.to_wif(), "6urV2sJu1oxECgNWpLTP3Lg5UvpeFqbZFn4kHvfK6cfmEvQp2xf");
 

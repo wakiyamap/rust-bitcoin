@@ -79,8 +79,8 @@ impl Params {
     /// Creates parameters set for the given network.
     pub fn new(network: Network) -> Self {
         match network {
-            Network::Bitcoin => Params {
-                network: Network::Bitcoin,
+            Network::Monacoin => Params {
+                network: Network::Monacoin,
                 bip16_time: 0, // gensis block
                 bip34_height: 0,
                 bip65_height: 977759, // ecc773c827a8cde039f6dfcdee2de981b747f58aa1bc4dddcb28e3c857dbc860
@@ -94,8 +94,8 @@ impl Params {
                 no_pow_retargeting: false,
                 switch_lyra2rev2_dgwblock: 450000,
             },
-            Network::Testnet => Params {
-                network: Network::Testnet,
+            Network::MonacoinTestnet => Params {
+                network: Network::MonacoinTestnet,
                 bip16_time: 0, // always enforce P2SH BIP16 on regtest
                 bip34_height: 0,
                 bip65_height: 100000000, // TODO
@@ -109,8 +109,8 @@ impl Params {
                 no_pow_retargeting: false,
                 switch_lyra2rev2_dgwblock: 60,
             },
-            Network::Regtest => Params {
-                network: Network::Regtest,
+            Network::MonacoinRegtest => Params {
+                network: Network::MonacoinRegtest,
                 bip16_time: 0,                 // gensis block
                 bip34_height: 100000000, // not activated on regtest
                 bip65_height: 100000000,

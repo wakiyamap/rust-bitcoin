@@ -31,7 +31,7 @@
 //! use bitcoin::network::constants::Network;
 //! use bitcoin::consensus::encode::serialize;
 //!
-//! let network = Network::Bitcoin;
+//! let network = Network::Monacoin;
 //! let bytes = serialize(&network.magic());
 //!
 //! assert_eq!(&bytes[..], &[0xFB, 0xC0, 0xB6, 0xDB]);
@@ -48,12 +48,12 @@ user_enum! {
     /// The cryptocurrency to act on
     #[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
     pub enum Network {
-        /// Classic Bitcoin
-        Bitcoin <-> "bitcoin",
-        /// Bitcoin's testnet
-        Testnet <-> "testnet",
-        /// Bitcoin's regtest
-        Regtest <-> "regtest"
+        /// Monacoin
+        Monacoin <-> "monacoin",
+        /// Monacoin's testnet
+        MonacoinTestnet <-> "testnet",
+        /// Monacoin's regtest
+        MonacoinRegtest <-> "regtest"
     }
 }
 
@@ -65,15 +65,15 @@ impl Network {
     /// ```rust
     /// use bitcoin::network::constants::Network;
     ///
-    /// assert_eq!(Some(Network::Bitcoin), Network::from_magic(0xD9B4BEF9));
+    /// assert_eq!(Some(Network::Monacoin), Network::from_magic(0xD9B4BEF9));
     /// assert_eq!(None, Network::from_magic(0xFFFFFFFF));
     /// ```
     pub fn from_magic(magic: u32) -> Option<Network> {
         // Note: any new entries here must be added to `magic` below
         match magic {
-            0xD9B4BEF9 => Some(Network::Bitcoin),
-            0x0709110B => Some(Network::Testnet),
-            0xDAB5BFFA => Some(Network::Regtest),
+            0xD9B4BEF9 => Some(Network::Monacoin),
+            0x0709110B => Some(Network::MonacoinTestnet),
+            0xDAB5BFFA => Some(Network::MonacoinRegtest),
             _ => None
         }
     }
@@ -86,15 +86,15 @@ impl Network {
     /// ```rust
     /// use bitcoin::network::constants::Network;
     ///
-    /// let network = Network::Bitcoin;
+    /// let network = Network::Monacoin;
     /// assert_eq!(network.magic(), 0xDBB6C0FB);
     /// ```
     pub fn magic(&self) -> u32 {
         // Note: any new entries here must be added to `from_magic` above
         match *self {
-            Network::Bitcoin => 0xDBB6C0FB,
-            Network::Testnet => 0xF1C8D2FD,
-            Network::Regtest => 0xDAB5BFFA,
+            Network::Monacoin => 0xDBB6C0FB,
+            Network::MonacoinTestnet => 0xF1C8D2FD,
+            Network::MonacoinRegtest => 0xDAB5BFFA,
         }
     }
 }
@@ -279,41 +279,41 @@ mod tests {
     #[test]
     fn serialize_test() {
         assert_eq!(
-            serialize(&Network::Bitcoin.magic()),
+            serialize(&Network::Monacoin.magic()),
             &[0xfb, 0xc0, 0xb6, 0xdb]
         );
         assert_eq!(
-            serialize(&Network::Testnet.magic()),
+            serialize(&Network::MonacoinTestnet.magic()),
             &[0xfd, 0xd2, 0xc8, 0xf1]
         );
         assert_eq!(
-            serialize(&Network::Regtest.magic()),
+            serialize(&Network::MonacoinRegtest.magic()),
             &[0xfa, 0xbf, 0xb5, 0xda]
         );
 
         assert_eq!(
             deserialize(&[0xfb, 0xc0, 0xb6, 0xdb]).ok(),
-            Some(Network::Bitcoin.magic())
+            Some(Network::Monacoin.magic())
         );
         assert_eq!(
             deserialize(&[0xfd, 0xd2, 0xc8, 0xf1]).ok(),
-            Some(Network::Testnet.magic())
+            Some(Network::MonacoinTestnet.magic())
         );
         assert_eq!(
             deserialize(&[0xfa, 0xbf, 0xb5, 0xda]).ok(),
-            Some(Network::Regtest.magic())
+            Some(Network::MonacoinRegtest.magic())
         );
     }
 
     #[test]
     fn string_test() {
-        assert_eq!(Network::Bitcoin.to_string(), "bitcoin");
-        assert_eq!(Network::Testnet.to_string(), "testnet");
-        assert_eq!(Network::Regtest.to_string(), "regtest");
+        assert_eq!(Network::Monacoin.to_string(), "monacoin");
+        assert_eq!(Network::MonacoinTestnet.to_string(), "testnet");
+        assert_eq!(Network::MonacoinRegtest.to_string(), "regtest");
 
-        assert_eq!("bitcoin".parse::<Network>().unwrap(), Network::Bitcoin);
-        assert_eq!("testnet".parse::<Network>().unwrap(), Network::Testnet);
-        assert_eq!("regtest".parse::<Network>().unwrap(), Network::Regtest);
+        assert_eq!("monacoin".parse::<Network>().unwrap(), Network::Monacoin);
+        assert_eq!("testnet".parse::<Network>().unwrap(), Network::MonacoinTestnet);
+        assert_eq!("regtest".parse::<Network>().unwrap(), Network::MonacoinRegtest);
         assert!("fakenet".parse::<Network>().is_err());
     }
 
