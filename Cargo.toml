@@ -1,17 +1,18 @@
 [package]
-name = "bitcoin"
+name = "monacoin"
 version = "0.23.0"
-authors = ["Andrew Poelstra <apoelstra@wpsoftware.net>"]
+authors = ["wakiyamap <wakiyamap@gmail.com>"]
 license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-bitcoin/"
-repository = "https://github.com/rust-bitcoin/rust-bitcoin/"
-documentation = "https://docs.rs/bitcoin/"
-description = "General purpose library for using and interoperating with Bitcoin and other cryptocurrencies."
-keywords = [ "crypto", "bitcoin" ]
+homepage = "https://github.com/wakiyamap/rust-monacoin/"
+repository = "https://github.com/wakiyamap/rust-monacoin/"
+documentation = "https://docs.rs/monacoin/"
+description = "General purpose library for using and interoperating with Monacoin and other cryptocurrencies."
+keywords = [ "crypto", "monacoin" ]
 readme = "README.md"
 
+
 [lib]
-name = "bitcoin"
+name = "monacoin"
 path = "src/lib.rs"
 
 [features]

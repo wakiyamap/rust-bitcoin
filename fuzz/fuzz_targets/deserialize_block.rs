@@ -1,7 +1,7 @@
-extern crate bitcoin;
+extern crate monacoin;
 
 fn do_test(data: &[u8]) {
-    let _: Result<bitcoin::blockdata::block::Block, _>= bitcoin::consensus::encode::deserialize(data);
+    let _: Result<monacoin::blockdata::block::Block, _>= monacoin::consensus::encode::deserialize(data);
 }
 
 #[cfg(feature = "afl")]

@@ -9,7 +9,7 @@ This is the fork of [rust-bitcoin](https://github.com/rust-bitcoin/rust-bitcoin)
 Library with support for de/serialization, parsing and executing on data
 structures and network messages related to Monacoin.
 
-[Documentation](https://docs.rs/bitcoin/)
+[Documentation](https://docs.rs/monacoin/)
 
 Supports (or should support)
 

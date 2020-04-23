@@ -1,9 +1,9 @@
-extern crate bitcoin;
+extern crate monacoin;
 
-use bitcoin::util::address::Address;
-use bitcoin::network::constants::Network;
-use bitcoin::blockdata::script;
-use bitcoin::consensus::encode;
+use monacoin::util::address::Address;
+use monacoin::network::constants::Network;
+use monacoin::blockdata::script;
+use monacoin::consensus::encode;
 
 fn do_test(data: &[u8]) {
     let s: Result<script::Script, _> = encode::deserialize(data);

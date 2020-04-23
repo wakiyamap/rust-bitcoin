@@ -1,8 +1,8 @@
 
-extern crate bitcoin;
+extern crate monacoin;
 
-use bitcoin::blockdata::transaction::OutPoint;
-use bitcoin::consensus::encode;
+use monacoin::blockdata::transaction::OutPoint;
+use monacoin::consensus::encode;
 
 use std::str::FromStr;
 

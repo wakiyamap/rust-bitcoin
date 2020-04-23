@@ -74,8 +74,8 @@ impl OutPoint {
     /// # Examples
     ///
     /// ```rust
-    /// use bitcoin::blockdata::constants::genesis_block;
-    /// use bitcoin::network::constants::Network;
+    /// use monacoin::blockdata::constants::genesis_block;
+    /// use monacoin::network::constants::Network;
     ///
     /// let block = genesis_block(Network::Monacoin);
     /// let tx = &block.txdata[0];

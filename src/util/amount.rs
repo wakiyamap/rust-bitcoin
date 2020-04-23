@@ -899,11 +899,11 @@ pub mod serde {
     //!
     //! ```rust,ignore
     //! use serde::{Serialize, Deserialize};
-    //! use bitcoin::Amount;
+    //! use monacoin::Amount;
     //!
     //! #[derive(Serialize, Deserialize)]
     //! pub struct HasAmount {
-    //!     #[serde(with = "bitcoin::util::amount::serde::as_btc")]
+    //!     #[serde(with = "monacoin::util::amount::serde::as_btc")]
     //!     pub amount: Amount,
     //! }
     //! ```

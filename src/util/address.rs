@@ -19,11 +19,11 @@
 //!
 //! ```rust
 //! extern crate secp256k1;
-//! extern crate bitcoin;
+//! extern crate monacoin;
 //!
-//! use bitcoin::network::constants::Network;
-//! use bitcoin::util::address::Address;
-//! use bitcoin::util::key;
+//! use monacoin::network::constants::Network;
+//! use monacoin::util::address::Address;
+//! use monacoin::util::key;
 //! use secp256k1::Secp256k1;
 //! use secp256k1::rand::thread_rng;
 //!
