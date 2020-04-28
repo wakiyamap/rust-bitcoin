@@ -30,7 +30,7 @@ use consensus::encode::{Encodable, serialize};
 use consensus::params::Params;
 use network::constants::Network;
 use blockdata::transaction::Transaction;
-use blockdata::constants::max_target;
+use blockdata::constants::{max_target, WITNESS_SCALE_FACTOR};
 use VarInt;
 extern crate lyra2;
 extern crate scrypt;
@@ -82,7 +82,7 @@ impl Block {
         if self.txdata.iter().all(|t| t.input.iter().all(|i| i.witness.is_empty())) {
             return true;
         }
-        if self.txdata.len() > 0 {
+        if !self.txdata.is_empty() {
             let coinbase = &self.txdata[0];
             if coinbase.is_coin_base() {
                 // commitment is in the last output that starts with below magic
@@ -129,19 +129,19 @@ impl Block {
         bitcoin_merkle_root(hashes).into()
     }
 
-    /// Get the weight of the block
-    pub fn get_weight(&self) -> usize {
-        // XXX use WITNESS_SCALE_FACTOR when rebasing to master
-        let base_weight = 4 * (80 + VarInt(self.txdata.len() as u64).len());
-        let txs_weight: usize = self.txdata.iter().map(|tx| tx.get_weight()).sum();
-        base_weight + txs_weight
-    }
-
     /// Get the size of the block
     pub fn get_size(&self) -> usize {
+        // The size of the header + the size of the varint with the tx count + the txs themselves
         let base_size = 80 + VarInt(self.txdata.len() as u64).len();
-        let txs_size: usize = self.txdata.iter().map(|tx| tx.get_size()).sum();
+        let txs_size: usize = self.txdata.iter().map(Transaction::get_size).sum();
         base_size + txs_size
+    }
+
+    /// Get the weight of the block
+    pub fn get_weight(&self) -> usize {
+        let base_weight = WITNESS_SCALE_FACTOR * (80 + VarInt(self.txdata.len() as u64).len());
+        let txs_weight: usize = self.txdata.iter().map(Transaction::get_weight).sum();
+        base_weight + txs_weight
     }
 }
 
@@ -282,6 +282,9 @@ mod tests {
         assert_eq!(real_decode.header.nonce, 2067413810);
         // [test] TODO: check the transaction data
 
+        assert_eq!(real_decode.get_size(), some_block.len());
+        assert_eq!(real_decode.get_weight(), some_block.len() * 4);
+
         // should be also ok for a non-witness block as commitment is optional in that case
         assert!(real_decode.check_witness_commitment());
 
@@ -308,6 +311,9 @@ mod tests {
         assert_eq!(real_decode.header.bits, 0x1a06d450);
         assert_eq!(real_decode.header.nonce, 1879759182);
         // [test] TODO: check the transaction data
+
+        assert_eq!(real_decode.get_size(), segwit_block.len());
+        assert_eq!(real_decode.get_weight(), 17168);
 
         assert!(real_decode.check_witness_commitment());
 
