@@ -1,4 +1,4 @@
-extern crate bitcoin;
+extern crate monacoin;
 use std::str::FromStr;
 use std::convert::Into;
 
