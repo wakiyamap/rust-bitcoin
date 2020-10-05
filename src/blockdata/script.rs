@@ -29,7 +29,7 @@ use std::{error, fmt, io};
 
 #[cfg(feature = "serde")] use serde;
 
-use hash_types::{ScriptHash, WScriptHash};
+use hash_types::{PubkeyHash, WPubkeyHash, ScriptHash, WScriptHash};
 use blockdata::opcodes;
 use consensus::{encode, Decodable, Encodable};
 use hashes::Hash;
@@ -105,15 +105,7 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(error::Error::description(self))
-    }
-}
-
-impl error::Error for Error {
-    fn cause(&self) -> Option<&error::Error> { None }
-
-    fn description(&self) -> &'static str {
-        match *self {
+        let str = match *self {
             Error::NonMinimalPush => "non-minimal datapush",
             Error::EarlyEndOfScript => "unexpected end of script",
             Error::NumericOverflow => "numeric overflow (number on stack larger than 4 bytes)",
@@ -123,7 +115,15 @@ impl error::Error for Error {
             Error::UnknownSpentOutput(ref _point) => "unknown spent output Transaction::verify()",
             #[cfg(feature="bitcoinconsensus")]
             Error::SerializationError => "can not serialize the spending transaction in Transaction::verify()",
-        }
+        };
+        f.write_str(str)
+    }
+}
+
+#[allow(deprecated)]
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        "description() is deprecated; use Display"
     }
 }
 
@@ -216,6 +216,65 @@ impl Script {
     /// Creates a new empty script
     pub fn new() -> Script { Script(vec![].into_boxed_slice()) }
 
+    /// Generates P2PK-type of scriptPubkey
+    pub fn new_p2pk(pubkey: &PublicKey) -> Script {
+        Builder::new()
+            .push_key(pubkey)
+            .push_opcode(opcodes::all::OP_CHECKSIG)
+            .into_script()
+    }
+
+    /// Generates P2PKH-type of scriptPubkey
+    pub fn new_p2pkh(pubkey_hash: &PubkeyHash) -> Script {
+        Builder::new()
+            .push_opcode(opcodes::all::OP_DUP)
+            .push_opcode(opcodes::all::OP_HASH160)
+            .push_slice(&pubkey_hash[..])
+            .push_opcode(opcodes::all::OP_EQUALVERIFY)
+            .push_opcode(opcodes::all::OP_CHECKSIG)
+            .into_script()
+    }
+
+    /// Generates P2SH-type of scriptPubkey with a given hash of the redeem script
+    pub fn new_p2sh(script_hash: &ScriptHash) -> Script {
+        Builder::new()
+            .push_opcode(opcodes::all::OP_HASH160)
+            .push_slice(&script_hash[..])
+            .push_opcode(opcodes::all::OP_EQUAL)
+            .into_script()
+    }
+
+    /// Generates P2WPKH-type of scriptPubkey
+    pub fn new_v0_wpkh(pubkey_hash: &WPubkeyHash) -> Script {
+        Script::new_witness_program(::bech32::u5::try_from_u8(0).unwrap(), &pubkey_hash.to_vec())
+    }
+
+    /// Generates P2WSH-type of scriptPubkey with a given hash of the redeem script
+    pub fn new_v0_wsh(script_hash: &WScriptHash) -> Script {
+        Script::new_witness_program(::bech32::u5::try_from_u8(0).unwrap(), &script_hash.to_vec())
+    }
+
+    /// Generates P2WSH-type of scriptPubkey with a given hash of the redeem script
+    pub fn new_witness_program(ver: ::bech32::u5, program: &[u8]) -> Script {
+        let mut verop = ver.to_u8();
+        assert!(verop <= 16);
+        if verop > 0 {
+            verop = 0x50 + verop;
+        }
+        Builder::new()
+            .push_opcode(verop.into())
+            .push_slice(&program)
+            .into_script()
+    }
+
+    /// Generates OP_RETURN-type of scriptPubkey for a given data
+    pub fn new_op_return(data: &[u8]) -> Script {
+        Builder::new()
+            .push_opcode(opcodes::all::OP_RETURN)
+            .push_slice(data)
+            .into_script()
+    }
+
     /// The length in bytes of the script
     pub fn len(&self) -> usize { self.0.len() }
 
@@ -233,18 +292,13 @@ impl Script {
 
     /// Compute the P2SH output corresponding to this redeem script
     pub fn to_p2sh(&self) -> Script {
-        Builder::new().push_opcode(opcodes::all::OP_HASH160)
-                      .push_slice(&ScriptHash::hash(&self.0)[..])
-                      .push_opcode(opcodes::all::OP_EQUAL)
-                      .into_script()
+        Script::new_p2sh(&ScriptHash::hash(&self.0))
     }
 
     /// Compute the P2WSH output corresponding to this witnessScript (aka the "witness redeem
     /// script")
     pub fn to_v0_p2wsh(&self) -> Script {
-        Builder::new().push_int(0)
-                      .push_slice(&WScriptHash::hash(&self.0)[..])
-                      .into_script()
+        Script::new_v0_wsh(&WScriptHash::hash(&self.0))
     }
 
     /// Checks whether a script pubkey is a p2sh output
@@ -329,10 +383,21 @@ impl Script {
     /// opcodes, datapushes and errors. At most one error will be returned and then the
     /// iterator will end. To instead iterate over the script as sequence of bytes, treat
     /// it as a slice using `script[..]` or convert it to a vector using `into_bytes()`.
-    pub fn iter(&self, enforce_minimal: bool) -> Instructions {
+    ///
+    /// To force minimal pushes, use [instructions_minimal].
+    pub fn instructions(&self) -> Instructions {
         Instructions {
             data: &self.0[..],
-            enforce_minimal: enforce_minimal,
+            enforce_minimal: false,
+        }
+    }
+
+    /// Iterate over the script in the form of `Instruction`s while enforcing
+    /// minimal pushes.
+    pub fn instructions_minimal(&self) -> Instructions {
+        Instructions {
+            data: &self.0[..],
+            enforce_minimal: true,
         }
     }
 
@@ -437,8 +502,6 @@ pub enum Instruction<'a> {
     PushBytes(&'a [u8]),
     /// Some non-push opcode
     Op(opcodes::All),
-    /// An opcode we were unable to parse
-    Error(Error)
 }
 
 /// Iterator over a script returning parsed opcodes
@@ -448,9 +511,9 @@ pub struct Instructions<'a> {
 }
 
 impl<'a> Iterator for Instructions<'a> {
-    type Item = Instruction<'a>;
+    type Item = Result<Instruction<'a>, Error>;
 
-    fn next(&mut self) -> Option<Instruction<'a>> {
+    fn next(&mut self) -> Option<Result<Instruction<'a>, Error>> {
         if self.data.is_empty() {
             return None;
         }
@@ -460,93 +523,93 @@ impl<'a> Iterator for Instructions<'a> {
                 let n = n as usize;
                 if self.data.len() < n + 1 {
                     self.data = &[];  // Kill iterator so that it does not return an infinite stream of errors
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
                 if self.enforce_minimal {
                     if n == 1 && (self.data[1] == 0x81 || (self.data[1] > 0 && self.data[1] <= 16)) {
                         self.data = &[];
-                        return Some(Instruction::Error(Error::NonMinimalPush));
+                        return Some(Err(Error::NonMinimalPush));
                     }
                 }
-                let ret = Some(Instruction::PushBytes(&self.data[1..n+1]));
+                let ret = Some(Ok(Instruction::PushBytes(&self.data[1..n+1])));
                 self.data = &self.data[n + 1..];
                 ret
             }
             opcodes::Class::Ordinary(opcodes::Ordinary::OP_PUSHDATA1) => {
                 if self.data.len() < 2 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
                 let n = match read_uint(&self.data[1..], 1) {
                     Ok(n) => n,
                     Err(e) => {
                         self.data = &[];
-                        return Some(Instruction::Error(e));
+                        return Some(Err(e));
                     }
                 };
                 if self.data.len() < n + 2 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
                 if self.enforce_minimal && n < 76 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::NonMinimalPush));
+                    return Some(Err(Error::NonMinimalPush));
                 }
-                let ret = Some(Instruction::PushBytes(&self.data[2..n+2]));
+                let ret = Some(Ok(Instruction::PushBytes(&self.data[2..n+2])));
                 self.data = &self.data[n + 2..];
                 ret
             }
             opcodes::Class::Ordinary(opcodes::Ordinary::OP_PUSHDATA2) => {
                 if self.data.len() < 3 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
                 let n = match read_uint(&self.data[1..], 2) {
                     Ok(n) => n,
                     Err(e) => {
                         self.data = &[];
-                        return Some(Instruction::Error(e));
+                        return Some(Err(e));
                     }
                 };
                 if self.enforce_minimal && n < 0x100 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::NonMinimalPush));
+                    return Some(Err(Error::NonMinimalPush));
                 }
                 if self.data.len() < n + 3 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
-                let ret = Some(Instruction::PushBytes(&self.data[3..n + 3]));
+                let ret = Some(Ok(Instruction::PushBytes(&self.data[3..n + 3])));
                 self.data = &self.data[n + 3..];
                 ret
             }
             opcodes::Class::Ordinary(opcodes::Ordinary::OP_PUSHDATA4) => {
                 if self.data.len() < 5 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
                 let n = match read_uint(&self.data[1..], 4) {
                     Ok(n) => n,
                     Err(e) => {
                         self.data = &[];
-                        return Some(Instruction::Error(e));
+                        return Some(Err(e));
                     }
                 };
                 if self.enforce_minimal && n < 0x10000 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::NonMinimalPush));
+                    return Some(Err(Error::NonMinimalPush));
                 }
                 if self.data.len() < n + 5 {
                     self.data = &[];
-                    return Some(Instruction::Error(Error::EarlyEndOfScript));
+                    return Some(Err(Error::EarlyEndOfScript));
                 }
-                let ret = Some(Instruction::PushBytes(&self.data[5..n + 5]));
+                let ret = Some(Ok(Instruction::PushBytes(&self.data[5..n + 5])));
                 self.data = &self.data[n + 5..];
                 ret
             }
             // Everything else we can push right through
             _ => {
-                let ret = Some(Instruction::Op(opcodes::All::from(self.data[0])));
+                let ret = Some(Ok(Instruction::Op(opcodes::All::from(self.data[0]))));
                 self.data = &self.data[1..];
                 ret
             }
@@ -556,7 +619,7 @@ impl<'a> Iterator for Instructions<'a> {
 
 impl Builder {
     /// Creates a new empty script
-    pub fn new() -> Builder {
+    pub fn new() -> Self {
         Builder(vec![], None)
     }
 
@@ -676,8 +739,8 @@ impl Default for Builder {
 impl From<Vec<u8>> for Builder {
     fn from(v: Vec<u8>) -> Builder {
         let script = Script(v.into_boxed_slice());
-        let last_op = match script.iter(false).last() {
-            Some(Instruction::Op(op)) => Some(op),
+        let last_op = match script.instructions().last() {
+            Some(Ok(Instruction::Op(op))) => Some(op),
             _ => None,
         };
         Builder(script.into_bytes(), last_op)
@@ -762,14 +825,15 @@ impl Decodable for Script {
 #[cfg(test)]
 mod test {
     use std::str::FromStr;
-    use hashes::hex::FromHex;
 
     use super::*;
     use super::build_scriptint;
 
+    use hashes::hex::{FromHex, ToHex};
     use consensus::encode::{deserialize, serialize};
     use blockdata::opcodes;
     use util::key::PublicKey;
+    use util::psbt::serialize::Serialize;
 
     #[test]
     fn script() {
@@ -817,6 +881,38 @@ mod test {
                                    .push_opcode(opcodes::all::OP_CHECKSIG)
                                    .into_script();
         assert_eq!(&format!("{:x}", script), "76a91416e1ae70ff0fa102905d4af297f6912bda6cce1988ac");
+    }
+
+    #[test]
+    fn script_generators() {
+        let pubkey = PublicKey::from_str("0234e6a79c5359c613762d537e0e19d86c77c1666d8c9ab050f23acd198e97f93e").unwrap();
+        assert!(Script::new_p2pk(&pubkey).is_p2pk());
+
+        let pubkey_hash = PubkeyHash::hash(&pubkey.serialize());
+        assert!(Script::new_p2pkh(&pubkey_hash).is_p2pkh());
+
+        let wpubkey_hash = WPubkeyHash::hash(&pubkey.serialize());
+        assert!(Script::new_v0_wpkh(&wpubkey_hash).is_v0_p2wpkh());
+
+        let script = Builder::new().push_opcode(opcodes::all::OP_NUMEQUAL)
+                                   .push_verify()
+                                   .into_script();
+        let script_hash = ScriptHash::hash(&script.serialize());
+        let p2sh = Script::new_p2sh(&script_hash);
+        assert!(p2sh.is_p2sh());
+        assert_eq!(script.to_p2sh(), p2sh);
+
+        let wscript_hash = WScriptHash::hash(&script.serialize());
+        let p2wsh = Script::new_v0_wsh(&wscript_hash);
+        assert!(p2wsh.is_v0_p2wsh());
+        assert_eq!(script.to_v0_p2wsh(), p2wsh);
+
+        // Test data are taken from the second output of
+        // 2ccb3a1f745eb4eefcf29391460250adda5fab78aaddb902d25d3cd97d9d8e61 transaction
+        let data = Vec::<u8>::from_hex("aa21a9ed20280f53f2d21663cac89e6bd2ad19edbabb048cda08e73ed19e9268d0afea2a").unwrap();
+        let op_return = Script::new_op_return(&data);
+        assert!(op_return.is_op_return());
+        assert_eq!(op_return.to_hex(), "6a24aa21a9ed20280f53f2d21663cac89e6bd2ad19edbabb048cda08e73ed19e9268d0afea2a");
     }
 
     #[test]
@@ -1009,31 +1105,31 @@ mod test {
         let minimal = hex_script!("0169b2");           // minimal
         let nonminimal_alt = hex_script!("026900b2");  // non-minimal number but minimal push (should be OK)
 
-        let v_zero: Vec<Instruction> = zero.iter(true).collect();
-        let v_zeropush: Vec<Instruction> = zeropush.iter(true).collect();
+        let v_zero: Result<Vec<Instruction>, Error> = zero.instructions_minimal().collect();
+        let v_zeropush: Result<Vec<Instruction>, Error> = zeropush.instructions_minimal().collect();
 
-        let v_min: Vec<Instruction> = minimal.iter(true).collect();
-        let v_nonmin: Vec<Instruction> = nonminimal.iter(true).collect();
-        let v_nonmin_alt: Vec<Instruction> = nonminimal_alt.iter(true).collect();
-        let slop_v_min: Vec<Instruction> = minimal.iter(false).collect();
-        let slop_v_nonmin: Vec<Instruction> = nonminimal.iter(false).collect();
-        let slop_v_nonmin_alt: Vec<Instruction> = nonminimal_alt.iter(false).collect();
+        let v_min: Result<Vec<Instruction>, Error> = minimal.instructions_minimal().collect();
+        let v_nonmin: Result<Vec<Instruction>, Error> = nonminimal.instructions_minimal().collect();
+        let v_nonmin_alt: Result<Vec<Instruction>, Error> = nonminimal_alt.instructions_minimal().collect();
+        let slop_v_min: Result<Vec<Instruction>, Error> = minimal.instructions().collect();
+        let slop_v_nonmin: Result<Vec<Instruction>, Error> = nonminimal.instructions().collect();
+        let slop_v_nonmin_alt: Result<Vec<Instruction>, Error> = nonminimal_alt.instructions().collect();
 
         assert_eq!(
-            v_zero,
+            v_zero.unwrap(),
             vec![
                 Instruction::PushBytes(&[]),
             ]
         );
         assert_eq!(
-            v_zeropush,
+            v_zeropush.unwrap(),
             vec![
                 Instruction::PushBytes(&[0]),
             ]
         );
 
         assert_eq!(
-            v_min,
+            v_min.clone().unwrap(),
             vec![
                 Instruction::PushBytes(&[105]),
                 Instruction::Op(opcodes::OP_NOP3),
@@ -1041,23 +1137,21 @@ mod test {
         );
 
         assert_eq!(
-            v_nonmin,
-            vec![
-                Instruction::Error(Error::NonMinimalPush),
-            ]
+            v_nonmin.err().unwrap(),
+            Error::NonMinimalPush
         );
 
         assert_eq!(
-            v_nonmin_alt,
+            v_nonmin_alt.clone().unwrap(),
             vec![
                 Instruction::PushBytes(&[105, 0]),
                 Instruction::Op(opcodes::OP_NOP3),
             ]
         );
 
-        assert_eq!(v_min, slop_v_min);
-        assert_eq!(v_min, slop_v_nonmin);
-        assert_eq!(v_nonmin_alt, slop_v_nonmin_alt);
+        assert_eq!(v_min.clone().unwrap(), slop_v_min.unwrap());
+        assert_eq!(v_min.unwrap(), slop_v_nonmin.unwrap());
+        assert_eq!(v_nonmin_alt.unwrap(), slop_v_nonmin_alt.unwrap());
     }
 
 	#[test]

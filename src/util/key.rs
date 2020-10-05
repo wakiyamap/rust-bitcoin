@@ -52,7 +52,7 @@ impl error::Error for Error {
     }
 
     fn description(&self) -> &str {
-		"Monacoin key error"
+        "description() is deprecated; use Display"
     }
 }
 

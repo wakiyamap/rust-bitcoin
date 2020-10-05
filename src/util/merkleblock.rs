@@ -431,7 +431,7 @@ impl MerkleBlock {
     /// assert_eq!(txid, matches[0]);
     /// ```
     pub fn from_block(block: &Block, match_txids: &HashSet<Txid>) -> Self {
-        let block_txids = block.txdata.iter().map(Transaction::txid).collect();
+        let block_txids: Vec<_> = block.txdata.iter().map(Transaction::txid).collect();
         Self::from_header_txids(&block.header, &block_txids, match_txids)
     }
 
@@ -439,11 +439,9 @@ impl MerkleBlock {
     ///
     /// The `header` is the block header, `block_txids` is the full list of txids included in the block and
     /// `match_txids` is a set containing the transaction ids that should be included in the partial merkle tree.
-    /// ```
-
     pub fn from_header_txids(
         header: &BlockHeader,
-        block_txids: &Vec<Txid>,
+        block_txids: &[Txid],
         match_txids: &HashSet<Txid>,
     ) -> Self {
         let matches: Vec<bool> = block_txids

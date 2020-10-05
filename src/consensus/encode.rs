@@ -109,6 +109,7 @@ impl fmt::Display for Error {
     }
 }
 
+#[allow(deprecated)]
 impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
@@ -127,7 +128,7 @@ impl error::Error for Error {
     }
 
     fn description(&self) -> &str {
-        "Bitcoin encoding error"
+        "description() is deprecated; use Display"
     }
 }
 
@@ -149,10 +150,10 @@ impl From<psbt::Error> for Error {
 
 /// Encode an object into a vector
 pub fn serialize<T: Encodable + ?Sized>(data: &T) -> Vec<u8> {
-    let mut encoder = Cursor::new(vec![]);
+    let mut encoder = Vec::new();
     let len = data.consensus_encode(&mut encoder).unwrap();
-    assert_eq!(len, encoder.get_ref().len());
-    encoder.into_inner()
+    assert_eq!(len, encoder.len());
+    encoder
 }
 
 /// Encode an object into a hex-encoded string

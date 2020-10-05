@@ -45,5 +45,12 @@ then
     cargo new dep_test
     cd dep_test
     echo 'monacoin = { path = "..", features = ["use-serde"] }' >> Cargo.toml
+
+    # Pin `cc` for Rust 1.29
+    if [ "$TRAVIS_RUST_VERSION" = "1.29.0" ]; then
+        cargo generate-lockfile --verbose
+        cargo update -p cc --precise "1.0.41" --verbose
+    fi
+
     cargo test --verbose
 fi

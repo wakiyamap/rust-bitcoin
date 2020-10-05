@@ -22,7 +22,7 @@ use std::str::FromStr;
 #[cfg(feature = "serde")] use serde;
 
 use hash_types::XpubIdentifier;
-use hashes::{hex, sha512, Hash, HashEngine, Hmac, HmacEngine};
+use hashes::{sha512, Hash, HashEngine, Hmac, HmacEngine};
 use secp256k1::{self, Secp256k1};
 
 use network::constants::Network;
@@ -64,7 +64,7 @@ pub struct ExtendedPrivKey {
 serde_string_impl!(ExtendedPrivKey, "a BIP-32 extended private key");
 
 /// Extended public key
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct ExtendedPubKey {
     /// The network this key is to be used on
     pub network: Network,
@@ -82,7 +82,7 @@ pub struct ExtendedPubKey {
 serde_string_impl!(ExtendedPubKey, "a BIP-32 extended public key");
 
 /// A child number for a derived key
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub enum ChildNumber {
     /// Non-hardened key
     Normal {
@@ -209,7 +209,7 @@ impl serde::Serialize for ChildNumber {
 }
 
 /// A BIP-32 derivation path.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct DerivationPath(Vec<ChildNumber>);
 impl_index_newtype!(DerivationPath, ChildNumber);
 serde_string_impl!(DerivationPath, "a BIP-32 derivation path");
@@ -385,14 +385,7 @@ impl error::Error for Error {
     }
 
     fn description(&self) -> &str {
-        match *self {
-            Error::CannotDeriveFromHardenedKey => "cannot derive hardened key from public key",
-            Error::Ecdsa(ref e) => error::Error::description(e),
-            Error::InvalidChildNumber(_) => "child number is invalid",
-            Error::RngError(_) => "rng error",
-            Error::InvalidChildNumberFormat => "invalid child number format",
-            Error::InvalidDerivationPathFormat => "invalid derivation path format",
-        }
+        "description() is deprecated; use Display"
     }
 }
 

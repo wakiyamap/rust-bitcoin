@@ -48,6 +48,12 @@ appreciated.
 ## Minimum Supported Rust Version (MSRV)
 This library should always compile with any combination of features on **Rust 1.32**.
 
+Because some dependencies have broken the build in minor/patch releases, to
+compile with 1.22.0 you will need to run the following version-pinning command:
+```
+cargo update -p cc --precise "1.0.41" --verbose
+```
+
 ## Installing Rust
 Rust can be installed using your package manager of choice or
 [rustup.rs](https://rustup.rs). The former way is considered more secure since

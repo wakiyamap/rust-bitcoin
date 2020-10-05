@@ -41,9 +41,7 @@ use std::str::FromStr;
 
 use bech32;
 use hashes::Hash;
-
 use hash_types::{PubkeyHash, WPubkeyHash, ScriptHash, WScriptHash};
-use blockdata::opcodes;
 use blockdata::script;
 use network::constants::Network;
 use util::base58;
@@ -64,6 +62,8 @@ pub enum Error {
     InvalidWitnessProgramLength(usize),
     /// A v0 witness program must be either of length 20 or 32.
     InvalidSegwitV0ProgramLength(usize),
+    /// An uncompressed pubkey was used where it is not allowed.
+    UncompressedPubkey,
 }
 
 impl fmt::Display for Error {
@@ -73,20 +73,20 @@ impl fmt::Display for Error {
             Error::Bech32(ref e) => write!(f, "bech32: {}", e),
             Error::EmptyBech32Payload => write!(f, "the bech32 payload was empty"),
             Error::InvalidWitnessVersion(v) => write!(f, "invalid witness script version: {}", v),
-            Error::InvalidWitnessProgramLength(l) => write!(
-                f,
-                "the witness program must be between 2 and 40 bytes in length: lengh={}",
-                l
+            Error::InvalidWitnessProgramLength(l) => write!(f,
+                "the witness program must be between 2 and 40 bytes in length: length={}", l,
             ),
-            Error::InvalidSegwitV0ProgramLength(l) => write!(
-                f,
-                "a v0 witness program must be either of length 20 or 32 bytes: length={}",
-                l
+            Error::InvalidSegwitV0ProgramLength(l) => write!(f,
+                "a v0 witness program must be either of length 20 or 32 bytes: length={}", l,
+            ),
+            Error::UncompressedPubkey => write!(f,
+                "an uncompressed pubkey was used where it is not allowed",
             ),
         }
     }
 }
 
+#[allow(deprecated)]
 impl ::std::error::Error for Error {
     fn cause(&self) -> Option<&::std::error::Error> {
         match *self {
@@ -96,8 +96,8 @@ impl ::std::error::Error for Error {
         }
     }
 
-    fn description(&self) -> &'static str {
-        "std::error::Error::description is deprecated"
+    fn description(&self) -> &str {
+        "description() is deprecated; use Display"
     }
 }
 
@@ -155,11 +155,11 @@ impl FromStr for AddressType {
 /// The method used to produce an address
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Payload {
-    /// pay-to-pkhash address
+    /// P2PKH address
     PubkeyHash(PubkeyHash),
     /// P2SH address
     ScriptHash(ScriptHash),
-    /// Segwit address
+    /// Segwit addresses
     WitnessProgram {
         /// The witness program version
         version: bech32::u5,
@@ -198,29 +198,15 @@ impl Payload {
     /// Generates a script pubkey spending to this [Payload].
     pub fn script_pubkey(&self) -> script::Script {
         match *self {
-            Payload::PubkeyHash(ref hash) => script::Builder::new()
-                .push_opcode(opcodes::all::OP_DUP)
-                .push_opcode(opcodes::all::OP_HASH160)
-                .push_slice(&hash[..])
-                .push_opcode(opcodes::all::OP_EQUALVERIFY)
-                .push_opcode(opcodes::all::OP_CHECKSIG),
-            Payload::ScriptHash(ref hash) => script::Builder::new()
-                .push_opcode(opcodes::all::OP_HASH160)
-                .push_slice(&hash[..])
-                .push_opcode(opcodes::all::OP_EQUAL),
+            Payload::PubkeyHash(ref hash) =>
+                script::Script::new_p2pkh(hash),
+            Payload::ScriptHash(ref hash) =>
+                script::Script::new_p2sh(hash),
             Payload::WitnessProgram {
                 version: ver,
                 program: ref prog,
-            } => {
-                assert!(ver.to_u8() <= 16);
-                let mut verop = ver.to_u8();
-                if verop > 0 {
-                    verop += 0x50;
-                }
-                script::Builder::new().push_opcode(verop.into()).push_slice(&prog)
-            }
+            } => script::Script::new_witness_program(ver, prog)
         }
-        .into_script()
     }
 }
 
@@ -260,22 +246,34 @@ impl Address {
 
     /// Create a witness pay to public key address from a public key
     /// This is the native segwit address type for an output redeemable with a single signature
-    pub fn p2wpkh(pk: &key::PublicKey, network: Network) -> Address {
+    ///
+    /// Will only return an Error when an uncompressed public key is provided.
+    pub fn p2wpkh(pk: &key::PublicKey, network: Network) -> Result<Address, Error> {
+        if !pk.compressed {
+            return Err(Error::UncompressedPubkey);
+        }
+
         let mut hash_engine = WPubkeyHash::engine();
         pk.write_into(&mut hash_engine);
 
-        Address {
+        Ok(Address {
             network: network,
             payload: Payload::WitnessProgram {
                 version: bech32::u5::try_from_u8(0).expect("0<32"),
                 program: WPubkeyHash::from_engine(hash_engine)[..].to_vec(),
             },
-        }
+        })
     }
 
     /// Create a pay to script address that embeds a witness pay to public key
     /// This is a segwit address type that looks familiar (as p2sh) to legacy clients
-    pub fn p2shwpkh(pk: &key::PublicKey, network: Network) -> Address {
+    ///
+    /// Will only return an Error when an uncompressed public key is provided.
+    pub fn p2shwpkh(pk: &key::PublicKey, network: Network) -> Result<Address, Error> {
+        if !pk.compressed {
+            return Err(Error::UncompressedPubkey);
+        }
+
         let mut hash_engine = WPubkeyHash::engine();
         pk.write_into(&mut hash_engine);
 
@@ -283,10 +281,10 @@ impl Address {
             .push_int(0)
             .push_slice(&WPubkeyHash::from_engine(hash_engine)[..]);
 
-        Address {
+        Ok(Address {
             network: network,
             payload: Payload::ScriptHash(ScriptHash::hash(builder.into_script().as_bytes())),
-        }
+        })
     }
 
     /// Create a witness pay to script hash address
@@ -589,12 +587,16 @@ mod tests {
 
     #[test]
     fn test_p2wpkh() {
-        // stolen from Monacoin transaction: b3c8c2b6cfc335abbcb2c7823a8453f55d64b2b5125a9a61e8737230cdb8ce20
-        let key = hex_key!("033bc8c83c52df5712229a2f72206d90192366c36428cb0c12b6af98324d97bfbc");
-        let addr = Address::p2wpkh(&key, Monacoin);
+        // stolen from Bitcoin transaction: b3c8c2b6cfc335abbcb2c7823a8453f55d64b2b5125a9a61e8737230cdb8ce20
+        let mut key = hex_key!("033bc8c83c52df5712229a2f72206d90192366c36428cb0c12b6af98324d97bfbc");
+        let addr = Address::p2wpkh(&key, Monacoin).unwrap();
         assert_eq!(&addr.to_string(), "mona1qvzvkjn4q3nszqxrv3nraga2r822xjty3q96530");
         assert_eq!(addr.address_type(), Some(AddressType::P2wpkh));
         roundtrips(&addr);
+
+        // Test uncompressed pubkey
+        key.compressed = false;
+        assert_eq!(Address::p2wpkh(&key, Monacoin), Err(Error::UncompressedPubkey));
     }
 
     #[test]
@@ -612,12 +614,16 @@ mod tests {
 
     #[test]
     fn test_p2shwpkh() {
-        // stolen from Monacoin transaction: ad3fd9c6b52e752ba21425435ff3dd361d6ac271531fc1d2144843a9f550ad01
-        let key = hex_key!("026c468be64d22761c30cd2f12cbc7de255d592d7904b1bab07236897cc4c2e766");
-        let addr = Address::p2shwpkh(&key, Monacoin);
+        // stolen from Bitcoin transaction: ad3fd9c6b52e752ba21425435ff3dd361d6ac271531fc1d2144843a9f550ad01
+        let mut key = hex_key!("026c468be64d22761c30cd2f12cbc7de255d592d7904b1bab07236897cc4c2e766");
+        let addr = Address::p2shwpkh(&key, Monacoin).unwrap();
         assert_eq!(&addr.to_string(), "PX5azwHFLCSaXpdBLe1gX7VuN2wrKcbcFw");
         assert_eq!(addr.address_type(), Some(AddressType::P2sh));
         roundtrips(&addr);
+
+        // Test uncompressed pubkey
+        key.compressed = false;
+        assert_eq!(Address::p2wpkh(&key, Monacoin), Err(Error::UncompressedPubkey));
     }
 
     #[test]

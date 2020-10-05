@@ -33,7 +33,7 @@ use util::endian;
 use blockdata::constants::WITNESS_SCALE_FACTOR;
 #[cfg(feature="bitcoinconsensus")] use blockdata::script;
 use blockdata::script::Script;
-use consensus::{encode, serialize, Decodable, Encodable};
+use consensus::{encode, Decodable, Encodable};
 use hash_types::*;
 use VarInt;
 
@@ -128,15 +128,10 @@ impl fmt::Display for ParseOutPointError {
     }
 }
 
+#[allow(deprecated)]
 impl ::std::error::Error for ParseOutPointError {
     fn description(&self) -> &str {
-        match *self {
-            ParseOutPointError::Txid(_) => "TXID parse error",
-            ParseOutPointError::Vout(_) => "vout parse error",
-            ParseOutPointError::Format => "outpoint format error",
-            ParseOutPointError::TooLong => "size error",
-            ParseOutPointError::VoutNotCanonical => "vout canonical error",
-        }
+        "description() is deprecated; use Display"
     }
 
     fn cause(&self) -> Option<&::std::error::Error> {
@@ -265,7 +260,7 @@ impl Default for TxOut {
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct Transaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
-    pub version: u32,
+    pub version: i32,
     /// Block number before which this transaction is valid, or 0 for
     /// valid immediately.
     pub lock_time: u32,
@@ -378,9 +373,11 @@ impl Transaction {
             _ => unreachable!()
         };
         // hash the result
-        let mut raw_vec = serialize(&tx);
-        raw_vec.extend_from_slice(&endian::u32_to_array_le(sighash_u32));
-        SigHash::hash(&raw_vec)
+        let mut engine = SigHash::engine();
+        tx.consensus_encode(&mut engine).unwrap();
+        let sighash_arr = endian::u32_to_array_le(sighash_u32);
+        sighash_arr.consensus_encode(&mut engine).unwrap();
+        SigHash::from_engine(engine)
     }
 
     /// Gets the "weight" of this transaction, as defined by BIP141. For transactions with an empty
@@ -441,7 +438,7 @@ impl Transaction {
     /// The lambda spent should not return the same TxOut twice!
     pub fn verify<S>(&self, mut spent: S) -> Result<(), script::Error>
         where S: FnMut(&OutPoint) -> Option<TxOut> {
-        let tx = serialize(&*self);
+        let tx = encode::serialize(&*self);
         for (idx, input) in self.input.iter().enumerate() {
             if let Some(output) = spent(&input.previous_output) {
                 output.script_pubkey.verify(idx, output.value, tx.as_slice())?;
@@ -534,7 +531,7 @@ impl Encodable for Transaction {
 
 impl Decodable for Transaction {
     fn consensus_decode<D: io::Read>(mut d: D) -> Result<Self, encode::Error> {
-        let version = u32::consensus_decode(&mut d)?;
+        let version = i32::consensus_decode(&mut d)?;
         let input = Vec::<TxIn>::consensus_decode(&mut d)?;
         // segwit
         if input.is_empty() {
@@ -762,6 +759,21 @@ mod tests {
                    "80b7d8a82d5d5bf92905b06f2014dd699e03837ca172e3a59d51426ebbe3e7f5".to_string());
         assert_eq!(realtx.get_weight(), 442);
         assert_eq!(realtx.get_size(), tx_bytes.len());
+    }
+
+    #[test]
+    fn test_transaction_version() {
+        let tx_bytes = Vec::from_hex("ffffff7f0100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000").unwrap();
+        let tx: Result<Transaction, _> = deserialize(&tx_bytes);
+        assert!(tx.is_ok());
+        let realtx = tx.unwrap();
+        assert_eq!(realtx.version, 2147483647);
+
+        let tx2_bytes = Vec::from_hex("000000800100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000").unwrap();
+        let tx2: Result<Transaction, _> = deserialize(&tx2_bytes);
+        assert!(tx2.is_ok());
+        let realtx2 = tx2.unwrap();
+        assert_eq!(realtx2.version, -2147483648);
     }
 
     #[test]
@@ -1232,4 +1244,3 @@ mod tests {
         }
     }
 }
-
